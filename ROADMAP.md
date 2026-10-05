@@ -337,6 +337,18 @@ A dedicated updater/deployment component remains preferable to rebuilding deploy
 
 ## Post-1.5 diagnostic roadmap
 
+### Language integration for the next release
+
+The existing `lang` branch contains a completed set of additional UTF-8 language files that must be integrated into the next Monitor release, but the branch must not be merged wholesale because it predates much of the 1.5.0 work.
+
+- [ ] rebase the language work onto the post-1.5.0 `master` baseline by copying/cherry-picking only the language files;
+- [ ] include the 13 completed translations from the `lang` branch: Chinese Simplified, Chinese Traditional, French Canada, French France, German, German Formal, Hebrew, Italian, Japanese, Persian, Russian, Spanish and Spanish Argentina;
+- [ ] verify key parity against the canonical English language file;
+- [ ] verify placeholders and format specifiers;
+- [ ] verify UTF-8 encoding and PHP syntax;
+- [ ] extend CI so future language drift or missing required files is detected automatically;
+- [ ] mention the added languages in the next release notes and README.
+
 - [ ] add a provider-aware SEO diagnostic view for missing, unusually short/long or duplicate metadata without hard-coding third-party plugin SQL;
 - [ ] add language-package diagnostics for missing/incomplete files and placeholder mismatches by reusing shared language-audit conventions;
 - [ ] add orphaned-plugin diagnostics for database registrations whose plugin files are missing, with explicit inventory and confirmed cleanup only;
