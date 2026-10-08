@@ -335,6 +335,52 @@ A dedicated updater/deployment component remains preferable to rebuilding deploy
 - [x] sort Discover plugins alphabetically;
 - [x] keep dist limited to the current installable archive and make concurrent archive publication safe.
 
+## Monitor 1.6.0 proposal — portable hosting and process diagnostics
+
+Status: **planned, not implemented**. Development branch: `develop-1.6.0`. Keep the 1.5.0 stabilization and published archives unchanged.
+
+### Purpose and scope
+
+Investigate anomalous server/application activity affecting Geeklog, including lingering FFmpeg encoders, overlapping cron executions and runaway PHP jobs. Follow the Monitor principle **Observe → Diagnose → Alert → Recommend → Act only when explicitly requested**. Monitor must not become a host-control panel, terminate arbitrary processes or replace specialized plugin responsibilities.
+
+### Hosting compatibility and capability detection
+
+- [ ] Build a read-only capability inventory: PHP configuration, disabled functions, `open_basedir`, disk metrics, process listing availability, PHP-FPM/Apache restrictions, optional CLI and cron capabilities.
+- [ ] Detect shared hosting, container/VPS or dedicated environments heuristically, but decide individual check support from tested capabilities rather than presumed hosting type.
+- [ ] Mark each metric `ok / warning / error / unavailable`; never interpret unavailable as healthy or no processes found.
+- [ ] Support Linux account-scoped process inspection only when explicitly enabled and permitted. Avoid assuming `ps`, `/proc`, `/bin/kill`, systemd or shell access. Non-Linux hosting receives portable PHP/Geeklog checks.
+- [ ] Ensure checks remain bounded in time and cost; cache process inspections and prohibit shell probes in every web request.
+- [ ] Scope observations to the current hosting account and active Geeklog site; never display command-line secrets, credentials or stream keys. Multiple Geeklog sites under one account require attribution or an explicit account-wide label.
+- [ ] Preserve Geeklog 2.1.1–2.2.2 / PHP 5.6–8.1 compatibility policy until explicitly updated.
+
+### Diagnostics and detection
+
+- [ ] PHP/application: repeated warnings/fatals, recent log spikes, oversized logs, unresponsive endpoints and failed scheduled jobs.
+- [ ] Cron: heartbeat/last-run and overlapping execution using cooperative locks/markers; report unknown when no instrumentation exists.
+- [ ] Runtime: disk space, DB responsiveness, persistent PHP jobs and optional CPU/memory/load only when trustworthy account-level counters exist.
+- [ ] Process scanner: detect owned long-running FFmpeg and other explicitly configured processes, compare with provider-declared desired state, and flag possible orphans after a grace period and two observations.
+- [ ] Radio integration via an optional read-only capability/service contract exposing Studio/manual/scheduled encoder expected state, session identifier and health; no direct access to Radio internal tables or assumption that Radio is installed.
+- [ ] Distinguish `declared live`, `actual process observed`, `unconfirmed`, `possible orphan`, `probe unavailable` and `stop failed`. A process alone is not proof of a live YouTube ingest.
+- [ ] Detect sudden increases relative to a rolling baseline instead of fixed thresholds only, with configurable thresholds, suppression and cooldown to avoid noisy alerts.
+- [ ] Collect structured snapshots through bounded Geeklog scheduled tasks; show last successful check time and stale-data warnings.
+
+### Administration and alerts
+
+- [ ] Add a Server / Hosting Diagnostics tab with a concise health summary, per-check source/capability, last observation time and recommendations.
+- [ ] Add optional admin-only site-wide incident indicator for genuine warning/error conditions, with no permanent green banner; it must not leak sensitive data on public pages.
+- [ ] Reuse Monitor's transition-based alerts and optionally Hello notifications, rate-limited and triggered on state changes rather than each cron tick.
+- [ ] Provide safe diagnostics/export for support, redacting filesystem secrets and process arguments.
+- [ ] Never automatically kill an unknown process. Any future targeted stop must be separately designed with ownership verification, CSRF, explicit confirmation and audit logging; excluded from the 1.6.0 baseline.
+
+### Validation and release gates
+
+- [ ] Test environments: shared Linux with shell functions disabled; shared Linux with account `ps`; Linux VPS/container; Windows or non-POSIX hosting without process probing.
+- [ ] Test false positives: FFmpeg belongs to another authorized stream, PID reused, zombie process, other-site process, unavailable `ps`, cron race, empty logs and delayed recorder shutdown.
+- [ ] Test installation/upgrade, multisite isolation, permissions, overhead, PHP 5.6 / 8.1 lint and optional integrations without Radio or Hello installed.
+- [ ] Keep diagnostic APIs read-only and redact all process command arguments and stream keys in responses and logs.
+
+---
+
 ## Post-1.5 diagnostic roadmap
 
 ### Language integration for the next release
