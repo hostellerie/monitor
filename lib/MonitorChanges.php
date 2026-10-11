@@ -13,20 +13,30 @@ if (isset($_SERVER['PHP_SELF']) &&
     die();
 }
 
+require_once __DIR__ . '/MonitorStorage.php';
+
 function MONITOR_CHANGES_snapshotPath()
 {
     global $_CONF;
 
-    if (empty($_CONF['path_data']) || !is_dir($_CONF['path_data'])) {
-        return '';
-    }
+    $dir = MONITOR_STORAGE_ensure('changes');
+    if ($dir === '') { return ''; }
 
     $site = isset($_CONF['site_url']) ? (string) $_CONF['site_url'] : '';
     $host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : '';
     $suffix = sha1($site . '|' . $host);
+    $name = 'monitor-changes-' . $suffix . '.json';
+    $target = $dir . $name;
 
-    return rtrim($_CONF['path_data'], '/\\')
-        . '/monitor-changes-' . $suffix . '.json';
+    // Preserve the legacy file. Never replace a destination containing data.
+    $legacy = isset($_CONF['path_data'])
+        ? rtrim($_CONF['path_data'], '/\\') . DIRECTORY_SEPARATOR . $name : '';
+    if ($legacy !== '' && is_file($legacy) &&
+        !MONITOR_STORAGE_copyLegacy($legacy, $target)) {
+        COM_errorLog('Monitor: snapshot legacy migration incomplete; original retained');
+        return '';
+    }
+    return $target;
 }
 
 function MONITOR_CHANGES_geeklogVersion()
