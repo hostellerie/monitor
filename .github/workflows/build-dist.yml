@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - monitor-1.5.0
+      - develop-1.6.0
     paths-ignore:
       - 'dist/**'
 
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    name: Build monitor_1.5.0_2.1.1.zip
+    name: Build monitor_1.6.0_2.1.1.zip
     runs-on: ubuntu-latest
 
     steps:
@@ -49,6 +49,7 @@ jobs:
           test -f package/monitor/sql/mysql_install.php
           test -f package/monitor/templates/administration.thtml
           test -f package/monitor/lib/MonitorHealth.php
+          test -f package/monitor/lib/MonitorStorage.php
 
           if find package/monitor -mindepth 1 -name '.*' -print -quit | grep -q .; then
             echo 'Error: dotfile or dot-directory found in package tree.' >&2
@@ -62,14 +63,14 @@ jobs:
           set -euo pipefail
           (
             cd package
-            zip -r -9 ../dist/monitor_1.5.0_2.1.1.zip monitor
+            zip -r -9 ../dist/monitor_1.6.0_2.1.1.zip monitor
           )
 
       - name: Validate ZIP contents
         shell: bash
         run: |
           set -euo pipefail
-          ARCHIVE='dist/monitor_1.5.0_2.1.1.zip'
+          ARCHIVE='dist/monitor_1.6.0_2.1.1.zip'
           test -s "$ARCHIVE"
           unzip -t "$ARCHIVE"
           unzip -Z1 "$ARCHIVE" | grep -qx 'monitor/autoinstall.php'
@@ -77,6 +78,10 @@ jobs:
           unzip -Z1 "$ARCHIVE" | grep -qx 'monitor/functions.inc'
           unzip -Z1 "$ARCHIVE" | grep -qx 'monitor/admin/index.php'
           unzip -Z1 "$ARCHIVE" | grep -qx 'monitor/sql/mysql_install.php'
+          unzip -Z1 "$ARCHIVE" | grep -qx 'monitor/lib/MonitorStorage.php'
+          unzip -Z1 "$ARCHIVE" | grep -qx 'monitor/lib/MonitorChanges.php'
+          unzip -Z1 "$ARCHIVE" | grep -qx 'monitor/lib/MonitorLogRotation.php'
+          unzip -p "$ARCHIVE" monitor/autoinstall.php | grep -q "'pi_version' *=> '1.6.0'"
 
           # Reject any archive entry for which any path component begins with a
           # dot, e.g. monitor/.htaccess, monitor/lib/.gitkeep or .DS_Store.
@@ -90,18 +95,18 @@ jobs:
         shell: bash
         run: |
           ls -lh dist/
-          sha256sum dist/monitor_1.5.0_2.1.1.zip
+          sha256sum dist/monitor_1.6.0_2.1.1.zip
 
       - name: Commit dist archive to branch
-        if: github.ref == 'refs/heads/monitor-1.5.0'
+        if: github.ref == 'refs/heads/develop-1.6.0'
         shell: bash
         run: |
           set -euo pipefail
 
           # Each run builds the commit that triggered it. If the branch moved
           # while the ZIP was being built, do not publish a stale archive.
-          git fetch origin monitor-1.5.0
-          REMOTE_HEAD="$(git rev-parse origin/monitor-1.5.0)"
+          git fetch origin develop-1.6.0
+          REMOTE_HEAD="$(git rev-parse origin/develop-1.6.0)"
           if [ "$REMOTE_HEAD" != "$GITHUB_SHA" ]; then
             echo "Branch advanced from $GITHUB_SHA to $REMOTE_HEAD; skipping stale dist commit."
             exit 0
@@ -116,13 +121,13 @@ jobs:
           if git diff --cached --quiet; then
             echo 'Distribution archive is already up to date.'
           else
-            git commit -m 'Update Monitor 1.5.0 distribution archive'
-            if ! git push origin HEAD:monitor-1.5.0; then
+            git commit -m 'Update Monitor 1.6.0 distribution archive'
+            if ! git push origin HEAD:develop-1.6.0; then
               # The branch may have advanced after the pre-push check. In that
               # case this archive belongs to an older source commit and must not
               # overwrite the newer branch head.
-              git fetch origin monitor-1.5.0
-              REMOTE_AFTER_PUSH="$(git rev-parse origin/monitor-1.5.0)"
+              git fetch origin develop-1.6.0
+              REMOTE_AFTER_PUSH="$(git rev-parse origin/develop-1.6.0)"
               if [ "$REMOTE_AFTER_PUSH" != "$GITHUB_SHA" ]; then
                 echo "Branch advanced during archive publication; skipping stale dist push."
                 exit 0
@@ -135,7 +140,7 @@ jobs:
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
-          name: monitor_1.5.0_2.1.1-dist
-          path: dist/monitor_1.5.0_2.1.1.zip
+          name: monitor_1.6.0_2.1.1-dist
+          path: dist/monitor_1.6.0_2.1.1.zip
           if-no-files-found: error
           retention-days: 30
