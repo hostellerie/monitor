@@ -526,6 +526,7 @@ function MONITOR_LOG_listArchives()
 {
     $dir = MONITOR_LOG_archiveDir();
     $archives = array();
+    if (!MONITOR_LOG_ensureArchiveDir()) { return $archives; }
     if (!is_dir($dir)) {
         return $archives;
     }
@@ -563,6 +564,7 @@ function MONITOR_LOG_archivePath($filename)
         return '';
     }
 
+    if (!MONITOR_LOG_ensureArchiveDir()) { return ''; }
     $path = MONITOR_LOG_archiveDir() . $filename;
 
     return is_file($path) && is_readable($path) ? $path : '';
