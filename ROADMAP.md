@@ -335,6 +335,15 @@ A dedicated updater/deployment component remains preferable to rebuilding deploy
 - [x] sort Discover plugins alphabetically;
 - [x] keep dist limited to the current installable archive and make concurrent archive publication safe.
 
+## Geeklog 2.2.2 persistent data safeguard (implemented on develop-1.6.0)
+
+- [x] Store Monitor change snapshots and dated log archives outside the Geeklog `path_data` cache-clear target.
+- [x] Preserve existing per-site identifiers and copy legacy data without deletion.
+- [x] Stop the affected storage operation on migration failure.
+- [x] Document per-site backup, migration verification and rollback in [docs/PERSISTENT-STORAGE-1.6.0.md](docs/PERSISTENT-STORAGE-1.6.0.md).
+- [ ] Verify on a backed-up live Geeklog 2.2.2 site before Clear Cache.
+- [ ] Validate PHP 5.6 and 8.1 compatibility and simultaneous multisite upgrades in CI.
+
 ## Monitor 1.6.0 proposal — portable hosting and process diagnostics
 
 Status: **planned, not implemented**. Development branch: `develop-1.6.0`. Keep the 1.5.0 stabilization and published archives unchanged.
