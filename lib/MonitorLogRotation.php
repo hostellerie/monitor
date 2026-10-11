@@ -25,16 +25,19 @@ function MONITOR_LOG_siteKey()
     return substr(sha1($host . '|' . $logPath), 0, 16);
 }
 
-function MONITOR_LOG_archiveDir()
+require_once __DIR__ . '/MonitorStorage.php';
+
+function MONITOR_LOG_legacyArchiveDir()
 {
     global $_CONF;
-
-    if (empty($_CONF['path_data'])) {
-        return '';
-    }
-
-    return rtrim($_CONF['path_data'], '/\\')
-        . DIRECTORY_SEPARATOR . 'monitor-log-archives-'
+    if (empty($_CONF['path_data'])) { return ''; }
+    return rtrim($_CONF['path_data'], '/\\') . DIRECTORY_SEPARATOR
+        . 'monitor-log-archives-' . MONITOR_LOG_siteKey() . DIRECTORY_SEPARATOR;
+}
+function MONITOR_LOG_archiveDir()
+{
+    $base = MONITOR_STORAGE_base();
+    return $base === '' ? '' : $base . 'log-archives' . DIRECTORY_SEPARATOR
         . MONITOR_LOG_siteKey() . DIRECTORY_SEPARATOR;
 }
 
@@ -57,16 +60,19 @@ function MONITOR_LOG_retentionDays()
 
 function MONITOR_LOG_ensureArchiveDir()
 {
+    $parent = MONITOR_STORAGE_ensure('log-archives');
+    if ($parent === '') { return false; }
     $dir = MONITOR_LOG_archiveDir();
-    if ($dir === '') {
+    if (!is_dir($dir) && !@mkdir($dir, 0750, true) && !is_dir($dir)) {
         return false;
     }
-
-    if (is_dir($dir)) {
-        return is_writable($dir);
+    if (!is_writable($dir)) { return false; }
+    // Keep originals intact for rollback; stop rotation if any copy fails.
+    if (!MONITOR_STORAGE_migrateArchive(MONITOR_LOG_legacyArchiveDir(), $dir)) {
+        COM_errorLog('Monitor: log archive migration incomplete; originals retained');
+        return false;
     }
-
-    return @mkdir($dir, 0750, true) && is_writable($dir);
+    return true;
 }
 
 function MONITOR_LOG_statePath()
