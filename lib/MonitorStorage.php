@@ -26,10 +26,8 @@ function MONITOR_STORAGE_ensure($subdir)
 function MONITOR_STORAGE_copyLegacy($source, $target)
 {
     if (!is_file($source) || !is_readable($source)) { return true; }
-    if (file_exists($target)) {
-        return is_file($target) && @filesize($source) === @filesize($target)
-            && @hash_file('sha256', $source) === @hash_file('sha256', $target);
-    }
+    // Once migrated, the destination is authoritative and may have changed.
+    if (file_exists($target)) { return is_file($target); }
     $temp = $target . '.' . getmypid() . '.tmp';
     if (!@copy($source, $temp)) { return false; }
     if (@filesize($source) !== @filesize($temp)
@@ -40,7 +38,7 @@ function MONITOR_STORAGE_copyLegacy($source, $target)
     // A second process may have completed migration while we copied.
     if (file_exists($target)) {
         @unlink($temp);
-        return @hash_file('sha256', $source) === @hash_file('sha256', $target);
+        return is_file($target);
     }
     if (!@rename($temp, $target)) { @unlink($temp); return false; }
     @chmod($target, 0640);
